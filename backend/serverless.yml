@@ -12,6 +12,10 @@ provider:
   stage: ${opt:stage, 'dev'}
   region: ${opt:region, 'eu-west-3'}
 
+  tracing:
+    lambda: true
+    apiGateway: true
+
   environment:
     TODOS_TABLE: Todos-abcd5-${self:provider.stage}
     USER_ID_INDEX: UserIdIndex
@@ -29,6 +33,11 @@ iamRoleStatements:
         - dynamodb:GetItem
         - dynamodb:Query
       Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+      Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}/index/${self:provider.environment.USER_ID_INDEX}
 
 functions:
 
@@ -42,6 +51,7 @@ functions:
       - http:
           method: get
           path: todos
+          cors: true
 
   # TODO: Configure this function
   CreateTodo:
@@ -49,7 +59,9 @@ functions:
     events:
       - http:
           method: post
+          authorizer: Auth
           path: todos
+          cors: true
 
   # TODO: Configure this function
   UpdateTodo:
@@ -57,7 +69,9 @@ functions:
     events:
       - http:
           method: patch
+          authorizer: Auth
           path: todos/{todoId}
+          cors: true
 
   # TODO: Configure this function
   DeleteTodo:
@@ -65,7 +79,9 @@ functions:
     events:
       - http:
           method: delete
+          authorizer: Auth
           path: todos/{todoId}
+          cors: true
 
   # TODO: Configure this function
   GenerateUploadUrl:
@@ -73,10 +89,22 @@ functions:
     events:
       - http:
           method: post
+          authorizer: Auth
           path: todos/{todoId}/attachment
+          cors: true
 
 resources:
   Resources:
+    GatewayResponseDefault4XX:
+      Type: AWS::ApiGateway::GatewayResponse
+      Properties:
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+          gatewayresponse.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST'"
+        ResponseType: DEFAULT_4XX
+        RestApiId:
+          Ref: ApiGatewayRestApi
     TodosTable:
       Type: AWS::DynamoDB::Table
       Properties:
