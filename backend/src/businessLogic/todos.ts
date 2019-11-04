@@ -6,8 +6,8 @@ import { CreateTodoRequest } from '../requests/CreateTodoRequest'
 
 const todoAccess = new TodoAccess()
 
-export async function getAllTodos(): Promise<TodoItem[]> {
-  return todoAccess.getAllTodos();
+export async function getAllTodosForUser(jwtToken: string): Promise<TodoItem[]> {
+  return todoAccess.getAllTodosForUser(jwtToken);
 }
 
 export async function createTodo(
