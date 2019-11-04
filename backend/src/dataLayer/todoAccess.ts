@@ -5,12 +5,14 @@ import { DocumentClient } from 'aws-sdk/clients/dynamodb'
 const XAWS = AWSXRay.captureAWS(AWS)
 
 import { TodoItem } from '../models/TodoItem'
+import { TodoUpdate } from '../models/TodoUpdate'
 
 export class TodoAccess {
 
   constructor(
     private readonly docClient: DocumentClient = createDynamoDBClient(),
-    private readonly todosTable = process.env.TODOS_TABLE) {
+    private readonly todosTable = process.env.TODOS_TABLE,
+    private readonly userIdIndex = process.env.USER_ID_INDEX) {
   }
 
   async getAllTodosForUser(jwtToken: String): Promise<TodoItem[]> {
@@ -18,6 +20,7 @@ export class TodoAccess {
     const userId = "userPlaceholder"
     const result = await this.docClient.query({
       TableName: this.todosTable,
+      IndexName: this.userIdIndex,
       KeyConditionExpression: 'userId = :userId',
       ExpressionAttributeValues: {
         ':userId': userId
@@ -34,7 +37,21 @@ export class TodoAccess {
       Item: todo
     }).promise()
 
-    return todo
+    return 
+  }
+
+  async updateTodo(todoId: string, 
+    todo: TodoUpdate) {
+    this.docClient.update({
+      TableName: this.todosTable,
+      Key: { todoId: todoId },
+      UpdateExpression: "set name = :name, done = :done, dueDate = :dueDate",
+      ExpressionAttributeValues: {
+        ":name": todo.name,
+        ":done": todo.done,
+        ":dueDate": todo.dueDate
+      }
+    })
   }
 }
 

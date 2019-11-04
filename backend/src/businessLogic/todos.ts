@@ -3,6 +3,7 @@ import * as uuid from 'uuid'
 import { TodoItem } from '../models/TodoItem'
 import { TodoAccess } from '../dataLayer/todoAccess'
 import { CreateTodoRequest } from '../requests/CreateTodoRequest'
+import { UpdateTodoRequest } from '../requests/UpdateTodoRequest'
 
 const todoAccess = new TodoAccess()
 
@@ -29,3 +30,15 @@ export async function createTodo(
         attachmentUrl: "empty"
     })
   }
+
+export async function updateTodo(
+  todoId: string,
+  updateTodoRequest: UpdateTodoRequest
+) {
+
+  return await todoAccess.updateTodo(todoId, {
+      name: updateTodoRequest.name,
+      dueDate: updateTodoRequest.dueDate,
+      done: updateTodoRequest.done
+  })
+}  
