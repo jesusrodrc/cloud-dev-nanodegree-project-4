@@ -1,15 +1,18 @@
 import { CustomAuthorizerEvent, CustomAuthorizerResult } from 'aws-lambda'
 import 'source-map-support/register'
 
-//import { decode } from 'jsonwebtoken'
+import { verify } from 'jsonwebtoken'
 import { createLogger } from '../../utils/logger'
-//import Axios from 'axios'
-//import { Jwt } from '../../auth/Jwt'
 import { JwtPayload } from '../../auth/JwtPayload'
+import * as AWS from 'aws-sdk'
 
 const logger = createLogger('auth')
+const secretId = process.env.AUTH_0_SECRET_ID
+const secretField = process.env.AUTH_0_SECRET_FIELD
 
-//const jwksUrl = 'https://test-endpoint.auth0.com/.well-known/jwks.json'
+const client = new AWS.SecretsManager()
+
+let cachedSecret:string
 
 export const handler = async (
   event: CustomAuthorizerEvent
@@ -17,11 +20,10 @@ export const handler = async (
   logger.info('Authorizing a user', event.authorizationToken)
   try {
     const jwtToken = await verifyToken(event.authorizationToken)
-    logger.info('User was authorized', jwtToken)
+    logger.info('User was authorized', jwtToken.sub)
 
     return {
-      //principalId: jwtToken.sub,
-      principalId: 'user',
+      principalId: jwtToken.sub,
       policyDocument: {
         Version: '2012-10-17',
         Statement: [
@@ -53,11 +55,13 @@ export const handler = async (
 }
 
 async function verifyToken(authHeader: string): Promise<JwtPayload> {
-  //const token =
-  getToken(authHeader)
-  //const jwt: Jwt = decode(token, { complete: true }) as Jwt
-
-  return undefined;
+  const token = getToken(authHeader)
+  const recoveredSecretObject = await getSecret()
+  const secret = recoveredSecretObject[secretField]
+  return verify(
+    token,
+    secret
+  ) as JwtPayload
 }
 
 function getToken(authHeader: string): string {
@@ -70,4 +74,16 @@ function getToken(authHeader: string): string {
   const token = split[1]
 
   return token
+}
+
+async function getSecret(): Promise<string> {
+  if (cachedSecret) return cachedSecret
+
+  const data = await client.getSecretValue({
+    SecretId: secretId
+  }).promise()
+
+  cachedSecret = data.SecretString
+
+  return JSON.parse(cachedSecret)
 }

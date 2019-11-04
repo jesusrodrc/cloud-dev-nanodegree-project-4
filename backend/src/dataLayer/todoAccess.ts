@@ -15,9 +15,8 @@ export class TodoAccess {
     private readonly userIdIndex = process.env.USER_ID_INDEX) {
   }
 
-  async getAllTodosForUser(jwtToken: String): Promise<TodoItem[]> {
-    console.log('Getting all todos for user ' + jwtToken)
-    const userId = "userPlaceholder"
+  async getAllTodosForUser(userId: String): Promise<TodoItem[]> {
+    console.log('Getting all todos for user ' + userId)
     const result = await this.docClient.query({
       TableName: this.todosTable,
       IndexName: this.userIdIndex,
