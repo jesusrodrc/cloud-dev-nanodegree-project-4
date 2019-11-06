@@ -36,19 +36,35 @@ export class TodoAccess {
       Item: todo
     }).promise()
 
-    return 
+    return todo
   }
 
-  async updateTodo(todoId: string, 
-    todo: TodoUpdate) {
-    this.docClient.update({
+  async deleteTodo(todoId: string, userId: string) {
+    console.log("todoId: " + todoId)
+    await this.docClient.delete({
       TableName: this.todosTable,
-      Key: { todoId: todoId },
-      UpdateExpression: "set name = :name, done = :done, dueDate = :dueDate",
-      ExpressionAttributeValues: {
-        ":name": todo.name,
-        ":done": todo.done,
-        ":dueDate": todo.dueDate
+      Key: {
+        todoId: todoId,
+        userId: userId
+      }
+    }).promise()
+  }
+
+  async updateTodo(todoId: string, userId: string,
+    todo: TodoUpdate) {
+    console.log(todo.done)
+    this.docClient.update({
+      TableName:this.todosTable,
+      Key:{
+          "todoId": todoId,
+          "userId": userId
+      },
+      UpdateExpression: "set #do = :d",
+      ExpressionAttributeValues:{
+        ":d": todo.done
+      },
+      ExpressionAttributeNames: {
+        "#do": "done"
       }
     })
   }

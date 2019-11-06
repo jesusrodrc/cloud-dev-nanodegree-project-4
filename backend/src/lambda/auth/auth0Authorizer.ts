@@ -1,7 +1,7 @@
 import { CustomAuthorizerEvent, CustomAuthorizerResult } from 'aws-lambda'
 import 'source-map-support/register'
 
-import { verify } from 'jsonwebtoken'
+import { verify, decode } from 'jsonwebtoken'
 import { createLogger } from '../../utils/logger'
 import { JwtPayload } from '../../auth/JwtPayload'
 import * as AWS from 'aws-sdk'
@@ -11,8 +11,6 @@ const secretId = process.env.AUTH_0_SECRET_ID
 const secretField = process.env.AUTH_0_SECRET_FIELD
 
 const client = new AWS.SecretsManager()
-
-let cachedSecret:string
 
 export const handler = async (
   event: CustomAuthorizerEvent
@@ -58,10 +56,12 @@ async function verifyToken(authHeader: string): Promise<JwtPayload> {
   const token = getToken(authHeader)
   const recoveredSecretObject = await getSecret()
   const secret = recoveredSecretObject[secretField]
+  console.log(token)
+  console.log(decode(token))
+  console.log(secret)
   return verify(
     token,
-    secret
-  ) as JwtPayload
+    secret) as JwtPayload
 }
 
 function getToken(authHeader: string): string {
@@ -77,13 +77,9 @@ function getToken(authHeader: string): string {
 }
 
 async function getSecret(): Promise<string> {
-  if (cachedSecret) return cachedSecret
-
   const data = await client.getSecretValue({
     SecretId: secretId
   }).promise()
 
-  cachedSecret = data.SecretString
-
-  return JSON.parse(cachedSecret)
+  return JSON.parse(data.SecretString)
 }

@@ -8,9 +8,8 @@ import { getUserId } from '../utils'
 
 export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   const newTodo: CreateTodoRequest = JSON.parse(event.body)
-
   const userId = getUserId(event)
-
+  
   const newItem = await createTodo(newTodo, userId)
 
   return {
