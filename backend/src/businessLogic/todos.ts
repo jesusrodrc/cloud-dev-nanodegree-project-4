@@ -49,5 +49,5 @@ export async function updateTodo(
 }
 
 export function generateUploadUrl(todoId: string): Promise<string> {
-  return toDoAccess.generateUploadUrl(todoId);
+  return todoAccess.generateUploadUrl(todoId);
 }

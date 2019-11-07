@@ -14,7 +14,7 @@ export class TodoAccess {
     private readonly docClient: DocumentClient = createDynamoDBClient(),
     private readonly todosTable = process.env.TODOS_TABLE,
     private readonly userIdIndex = process.env.USER_ID_INDEX,
-    private readonly todoBucket = process.env.S3_BUCKET_NAME,
+    private readonly todoBucket = process.env.TODO_S3_BUCKET,
     private readonly s3Client: Types = new AWS.S3({signatureVersion: 'v4'}),
     ) {
   }
@@ -83,7 +83,8 @@ export class TodoAccess {
   async generateUploadUrl(todoId: string): Promise<string> {
     const url = this.s3Client.getSignedUrl('putObject', {
         Bucket: this.todoBucket,
-        Key: todoId
+        Key: todoId,
+        Expires: 1000,
     });
     console.log(url);
 
