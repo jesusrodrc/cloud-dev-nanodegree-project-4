@@ -40,10 +40,14 @@ export async function updateTodo(
   userId: string,
   updateTodoRequest: UpdateTodoRequest
 ) {
-
+  console.log("calling db method to update todo")
   return await todoAccess.updateTodo(todoId, userId, {
       name: updateTodoRequest.name,
       dueDate: updateTodoRequest.dueDate,
       done: updateTodoRequest.done
   })
-}  
+}
+
+export function generateUploadUrl(todoId: string): Promise<string> {
+  return toDoAccess.generateUploadUrl(todoId);
+}

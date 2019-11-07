@@ -6,13 +6,17 @@ const XAWS = AWSXRay.captureAWS(AWS)
 
 import { TodoItem } from '../models/TodoItem'
 import { TodoUpdate } from '../models/TodoUpdate'
+import {Types} from 'aws-sdk/clients/s3';
 
 export class TodoAccess {
 
   constructor(
     private readonly docClient: DocumentClient = createDynamoDBClient(),
     private readonly todosTable = process.env.TODOS_TABLE,
-    private readonly userIdIndex = process.env.USER_ID_INDEX) {
+    private readonly userIdIndex = process.env.USER_ID_INDEX,
+    private readonly todoBucket = process.env.S3_BUCKET_NAME,
+    private readonly s3Client: Types = new AWS.S3({signatureVersion: 'v4'}),
+    ) {
   }
 
   async getAllTodosForUser(userId: String): Promise<TodoItem[]> {
@@ -52,21 +56,38 @@ export class TodoAccess {
 
   async updateTodo(todoId: string, userId: string,
     todo: TodoUpdate) {
-    console.log(todo.done)
-    this.docClient.update({
-      TableName:this.todosTable,
-      Key:{
-          "todoId": todoId,
-          "userId": userId
-      },
-      UpdateExpression: "set #do = :d",
-      ExpressionAttributeValues:{
-        ":d": todo.done
-      },
-      ExpressionAttributeNames: {
-        "#do": "done"
-      }
-    })
+    console.log("Updating todo");
+    const params = {
+        TableName: this.todosTable,
+        Key: {
+            "userId": userId,
+            "todoId": todoId
+        },
+        UpdateExpression: "set #a = :a, #b = :b, #c = :c",
+        ExpressionAttributeNames: {
+            "#a": "name",
+            "#b": "dueDate",
+            "#c": "done"
+        },
+        ExpressionAttributeValues: {
+            ":a": todo.name,
+            ":b": todo.dueDate,
+            ":c": todo.done
+        },
+        ReturnValues: "ALL_NEW"
+    }
+    const result = await this.docClient.update(params).promise();
+    console.log("result " + result);
+  }
+
+  async generateUploadUrl(todoId: string): Promise<string> {
+    const url = this.s3Client.getSignedUrl('putObject', {
+        Bucket: this.todoBucket,
+        Key: todoId
+    });
+    console.log(url);
+
+    return url as string;
   }
 }
 
