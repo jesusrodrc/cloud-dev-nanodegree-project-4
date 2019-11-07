@@ -22,7 +22,9 @@ provider:
     USER_ID_INDEX: UserIdIndex
     AUTH_0_SECRET_ID: Auth0Secret-${self:provider.stage}
     AUTH_0_SECRET_FIELD: auth0Secret
-    TODO_S3_BUCKET: images-bucket-abcd-${self:provider.stage}
+    TODO_S3_BUCKET: images-bucket-abcd2-${self:provider.stage}
+    REGION: eu-west-3
+    TOPIC_NAME: imagesTopic-abcd2-${self:provider.stage}
     SIGNED_URL_EXPIRATION: 300
 
 iamRoleStatements:
@@ -180,7 +182,12 @@ resources:
         KmsKeyId: !Ref KMSKey
     AttachmentsBucket:
       Type: AWS::S3::Bucket
+      DependsOn: SNSTopicPolicy
       Properties:
+        NotificationConfiguration:
+          TopicConfigurations:
+            - Event: s3:ObjectCreated:Put
+              Topic: !Ref ImagesTopic
         BucketName: ${self:provider.environment.TODO_S3_BUCKET}
         CorsConfiguration:
           CorsRules:
@@ -196,3 +203,39 @@ resources:
                 - DELETE
                 - HEAD
               MaxAge: 3000
+
+    BucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        PolicyDocument:
+          Id: MyPolicy
+          Version: "2012-10-17"
+          Statement:
+            - Sid: PublicReadForGetBucketObjects
+              Effect: Allow
+              Principal: '*'
+              Action: 's3:GetObject'
+              Resource: 'arn:aws:s3:::${self:provider.environment.TODO_S3_BUCKET}/*'
+        Bucket: !Ref AttachmentsBucket
+    SNSTopicPolicy:
+      Type: AWS::SNS::TopicPolicy
+      Properties:
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Principal:
+                AWS: "*"
+              Action: sns:Publish
+              Resource:
+                !Ref ImagesTopic
+              Condition:
+                ArnLike:
+                  AWS:SourceArn: arn:aws:s3:::${self:provider.environment.TODO_S3_BUCKET}
+        Topics:
+          - !Ref ImagesTopic
+    ImagesTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        DisplayName: Image bucket topic
+        TopicName: ${self:provider.environment.TOPIC_NAME}

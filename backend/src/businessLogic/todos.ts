@@ -6,6 +6,8 @@ import { CreateTodoRequest } from '../requests/CreateTodoRequest'
 import { UpdateTodoRequest } from '../requests/UpdateTodoRequest'
 
 const todoAccess = new TodoAccess()
+const todoBucket = process.env.TODO_S3_BUCKET
+const appRegion = process.env.REGION
 
 export async function getAllTodosForUser(userId: string): Promise<TodoItem[]> {
   return todoAccess.getAllTodosForUser(userId);
@@ -25,7 +27,7 @@ export async function createTodo(
         name: createTodoRequest.name,
         dueDate: createTodoRequest.dueDate,
         done: false,
-        attachmentUrl: "empty"
+        attachmentUrl: "https://" + todoBucket + ".s3." + appRegion + ".amazonaws.com/" + itemId
     })
     return thing
   }
