@@ -2,10 +2,12 @@ import * as uuid from 'uuid'
 
 import { TodoItem } from '../models/TodoItem'
 import { TodoAccess } from '../dataLayer/todoAccess'
+import { ImagesAccess } from '../dataLayer/imagesAccess'
 import { CreateTodoRequest } from '../requests/CreateTodoRequest'
 import { UpdateTodoRequest } from '../requests/UpdateTodoRequest'
 
 const todoAccess = new TodoAccess()
+const imagesAccess = new ImagesAccess()
 const todoBucket = process.env.TODO_S3_BUCKET
 const appRegion = process.env.REGION
 
@@ -51,5 +53,5 @@ export async function updateTodo(
 }
 
 export function generateUploadUrl(todoId: string): Promise<string> {
-  return todoAccess.generateUploadUrl(todoId);
+  return imagesAccess.generateUploadUrl(todoId);
 }
